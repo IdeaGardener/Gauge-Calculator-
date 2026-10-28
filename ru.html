@@ -1,0 +1,1031 @@
+<!doctype html><html><head>
+  <link rel="manifest" href="./manifest.json">
+
+<meta name="theme-color" content="#87CEEB">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<div style="position:absolute;top:10px;right:16px;z-index:9999;
+            display:flex;flex-direction:row;
+            gap:12px;font-size:14px;font-weight:600;">
+
+  <a href="index.html" style="text-decoration:none;color:#C2185B;">🌐 EN</a>
+  <a href="de.html" style="text-decoration:none;color:#C2185B;">🌐 DE</a>
+  <a href="ru.html" style="text-decoration:none;color:#C2185B;">🌐 RU</a>
+  <a href="uk.html" style="text-decoration:none;color:#C2185B;">🌐 UK</a>
+
+</div>
+<title>Калькулятор по образцу</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column. Shared gauge panel on top, a wrapping row of mode tabs, then the inputs and big result tiles of the chosen mode. */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --fg:#18202B; --muted:#5E6B7D; --line:#D5DBE4;
+  --accent:#C2185B; --on-accent:#FFFFFF; --teal:#0F766E; --track:#D5DBE4;
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181F; --surface:#1D232D; --fg:#E8ECF2; --muted:#93A0B3; --line:#2C3544;
+    --accent:#FF7DAE; --on-accent:#14181F; --teal:#4FD1C0; --track:#2C3544; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181F; --surface:#1D232D; --fg:#E8ECF2; --muted:#93A0B3; --line:#2C3544;
+  --accent:#FF7DAE; --on-accent:#14181F; --teal:#4FD1C0; --track:#2C3544; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:16px; line-height:1.4;
+  padding-block:16px 40px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{margin:0;font-family:var(--font-display);font-weight:700;font-size:1.7rem;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:999px;padding:3px}
+.seg button{flex:1;background:transparent;border:0;border-radius:999px;padding:9px 12px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--bg)}
+.seg.inline{display:inline-flex}
+.seg.inline button{flex:none;padding:6px 16px}
+.seg.wrapseg{flex-wrap:wrap;border-radius:18px}
+.seg.wrapseg button{min-width:30%}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{flex:none;background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.danger{color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h2{margin:0;font-size:1rem;font-weight:600}
+details.panel{gap:0}
+details>summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"+";color:var(--muted);font-size:1.3rem;line-height:1}
+details[open]>summary::after{content:"−"}
+.inner{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+.foot{color:var(--muted);font-size:.85rem;text-wrap:pretty;margin:0}
+.sub{color:var(--muted)}
+
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld>span{color:var(--muted);font-size:.85rem;font-weight:500}
+.txt,.sel{width:100%;min-width:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-variant-numeric:tabular-nums}
+.txt::placeholder{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.derived{background:var(--bg);border-radius:10px;padding:10px 12px;font-weight:500;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:2px}
+.derived .sub{font-weight:400;font-size:.9rem}
+
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tiles:empty{display:none}
+.tile{background:var(--surface);border:1.5px solid var(--teal);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-family:var(--font-display);font-size:2.4rem;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile span{color:var(--muted);font-size:.9rem}
+.lines{display:flex;flex-direction:column;gap:8px}
+.lines p{margin:0;text-wrap:pretty}
+.lines .alt{color:var(--muted)}
+.warn{color:var(--accent);font-weight:600;margin:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:140px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:.9rem;font-weight:500}
+.sched{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.sched li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;padding:8px 12px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.sched li:first-child{border-top:0}
+.sk{width:100%;max-width:320px;display:block;margin:0 auto}
+.sk path,.sk rect{fill:var(--bg);stroke:var(--teal);stroke-width:2.5}
+.sk .dash{stroke:var(--muted);stroke-dasharray:5 4;fill:none;stroke-width:1.5}
+.sk text{fill:var(--fg);font:600 12px var(--font-body)}
+.sk text.m{fill:var(--muted);font-weight:500}
+.xfer{width:100%;min-height:84px;resize:vertical;background:var(--bg);color:var(--fg);border:1.5px solid var(--line);border-radius:10px;padding:10px;font:.8rem/1.4 ui-monospace,Menlo,Consolas,monospace}
+.xfer::placeholder{color:var(--muted)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <h1>Калькулятор по образцу</h1>
+
+  <div class="top">
+    <span class="sub">Единицы измерения</span>
+    <div class="seg inline" role="group" aria-label="Единицы измерения">
+      <button type="button" id="uCm" aria-pressed="true">Сантиметры</button>
+      <button type="button" id="uIn" aria-pressed="false">Дюймы</button>
+    </div>
+  </div>
+
+  <div class="panel" aria-label="Ваш образец">
+    <h2>Ваш образец</h2>
+    <p class="foot">Значения ниже даны для примера. Замените их своими: измерьте образец после стирки и сушки, в середине, вдали от краёв.</p>
+    <div class="grid2">
+      <label class="fld"><span>Петель в образце</span><input class="txt" id="g_st" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label class="fld"><span>На ширину, <i class="un">см</i></span><input class="txt" id="g_stW" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label class="fld"><span>Рядов в образце</span><input class="txt" id="g_rw" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label class="fld"><span>На высоту, <i class="un">см</i></span><input class="txt" id="g_rwH" type="text" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <label class="fld"><span>Усадка изделия после стирки, %</span><input class="txt" id="shrink" type="text" inputmode="decimal" autocomplete="off"></label>
+    <p class="foot">Если вы измеряли образец после стирки, оставьте 0. Если до стирки, впишите, насколько изделие сядет (у хлопка обычно 3–5%). Если пряжа растягивается (вискоза, бамбук), впишите отрицательное число, например −4.</p>
+    <div class="derived" id="derived"></div>
+
+    <label class="fld"><span>Считать по образцу</span><select class="sel" id="useSel"></select></label>
+
+    <details id="savedBox">
+      <summary>Мои образцы</summary>
+      <div class="inner">
+        <p class="foot">Сохраните образец под названием пряжи, узора или части изделия (например, «резинка 1×1»), а потом выбирайте нужную в списке «Считать по образцу». Так можно считать разные части одного проекта по разным образцам.</p>
+        <div class="row2">
+          <label class="fld"><span>Название образца</span><input class="txt" id="saveName" type="text" maxlength="40" placeholder="Например, хлопок 3,5 мм"></label>
+          <button class="btn primary" id="saveBtn" type="button">Сохранить</button>
+        </div>
+        <label class="fld"><span>Сохранённые образцы</span><select class="sel" id="savedSel"></select></label>
+        <div class="actions">
+          <button class="btn" id="applyBtn" type="button">Загрузить в поля</button>
+          <button class="btn danger" id="delBtn" type="button">Удалить</button>
+        </div>
+        <div class="foot" id="savedMsg" role="status"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="tabs" id="modes" role="tablist" aria-label="Что посчитать"></div>
+
+    <section id="v_cast" class="wrap" style="gap:16px" aria-label="Сколько набрать">
+    <div class="panel">
+      <h2>Нужный размер изделия</h2>
+      <div class="grid2">
+        <label class="fld"><span>Ширина, <i class="un">см</i></span><input class="txt" id="t_w" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Высота, <i class="un">см</i></span><input class="txt" id="t_h" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <details>
+        <summary>Кратность узора и цепочка</summary>
+        <div class="inner">
+          <div class="grid2">
+            <label class="fld"><span>Узор кратен, петель</span><input class="txt" id="r_mult" type="text" inputmode="numeric" autocomplete="off"></label>
+            <label class="fld"><span>Плюс краевых петель</span><input class="txt" id="r_edge" type="text" inputmode="numeric" autocomplete="off"></label>
+            <label class="fld"><span>Рядов в раппорте</span><input class="txt" id="r_rowMult" type="text" inputmode="numeric" autocomplete="off"></label>
+            <label class="fld"><span>Подъёмные петли в цепочке</span><input class="txt" id="r_extra" type="text" inputmode="numeric" autocomplete="off"></label>
+          </div>
+          <p class="foot">Если узор повторяется через 6 петель и ещё нужны 2 краевые, впишите 6 и 2: калькулятор подберёт число вида 6 × k + 2. Подъёмные петли для вязания крючком прибавляются к начальной цепочке (обычно 1–3 в зависимости от высоты столбиков). Эти же настройки работают для шарфа и пледа в разделе «Изделия».</p>
+        </div>
+      </details>
+    </div>
+    <div class="tiles" id="castTiles"></div>
+    <div class="lines" id="castLines" role="status"></div>
+    <div class="actions"><button class="btn" type="button" data-copy="cast">Скопировать результат</button></div>
+  </section>
+
+    <section id="v_size" class="wrap" style="gap:16px" aria-label="Какой размер получится" hidden>
+    <div class="panel">
+      <h2>Что у вас связано или набрано</h2>
+      <div class="grid2">
+        <label class="fld"><span>Петель</span><input class="txt" id="s_st" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Рядов</span><input class="txt" id="s_rw" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="tiles" id="sizeTiles"></div>
+    <div class="lines" id="sizeLines" role="status"></div>
+    <div class="actions"><button class="btn" type="button" data-copy="size">Скопировать результат</button></div>
+  </section>
+
+    <section id="v_conv" class="wrap" style="gap:16px" aria-label="Пересчёт схемы" hidden>
+    <div class="panel">
+      <h2>Образец из описания схемы</h2>
+      <div class="grid2">
+        <label class="fld"><span>Петель в образце схемы</span><input class="txt" id="p_st" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>На ширину, <i class="un">см</i></span><input class="txt" id="p_stW" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Рядов в образце схемы</span><input class="txt" id="p_rw" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>На высоту, <i class="un">см</i></span><input class="txt" id="p_rwH" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Числа из схемы</h2>
+      <div class="grid2">
+        <label class="fld"><span>Петель в схеме</span><input class="txt" id="p_nst" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Рядов в схеме</span><input class="txt" id="p_nrw" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="tiles" id="convTiles"></div>
+    <div class="lines" id="convLines" role="status"></div>
+    <div class="actions"><button class="btn" type="button" data-copy="conv">Скопировать результат</button></div>
+  </section>
+
+    <section id="v_dec" class="wrap" style="gap:16px" aria-label="Прибавки и убавки" hidden>
+    <div class="seg" id="decSeg" role="group" aria-label="Тип разбивки">
+      <button type="button" id="dmRows">По рядам (в высоту)</button>
+      <button type="button" id="dmRow">В одном ряду</button>
+    </div>
+    <div class="panel">
+      <h2>Как равномерно распределить изменение</h2>
+      <div class="grid2">
+        <label class="fld"><span id="dALabel">Петель сейчас</span><input class="txt" id="d_a" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label class="fld"><span>Петель должно стать</span><input class="txt" id="d_b" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label class="fld" id="wrapRows"><span>За сколько рядов</span><input class="txt" id="d_rows" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label class="fld" id="wrapPer"><span>Петель за один раз</span><input class="txt" id="d_per" type="text" inputmode="numeric" autocomplete="off"></label>
+      </div>
+      <p class="foot" id="decFootRows">«Петель за один раз» это сколько петель убавляется или прибавляется в одном ряду: 2 значит по одной с каждого края, 1 значит с одного края. Если убавка идёт по кругу в нескольких местах, впишите их общее число.</p>
+      <p class="foot" id="decFootRow" hidden>Например, в ряду 90 петель нужно прибавить 12: страница покажет, через сколько петель делать каждую прибавку, чтобы они легли равномерно. Прибавка делается после группы петель, убавка это две петли, связанные вместе. Если не хотите менять края, начните ряд с половины первой группы, а вторую половину довяжите в конце ряда.</p>
+    </div>
+    <div class="tiles" id="decTiles"></div>
+    <div class="lines" id="decLines" role="status"></div>
+    <div class="actions">
+      <button class="btn" type="button" data-copy="dec">Скопировать результат</button>
+      <button class="btn" type="button" id="decCounter">Скопировать для счётчика</button>
+    </div>
+    <p class="foot" id="decFootCounter">Для счётчика копируется число петель в конце каждого ряда. Вставьте его в раздел «Схема по рядам» страницы «Счётчик рядов и петель»: данные между страницами автоматически не передаются, потому что каждая сохраняет их в своём браузерном хранилище.</p>
+  </section>
+
+    <section id="v_shape" class="wrap" style="gap:16px" aria-label="Изделия" hidden>
+    <div class="seg wrapseg" id="shapeSeg" role="group" aria-label="Тип изделия"></div>
+
+    <div class="panel" id="f_hat">
+      <h2>Шапка</h2>
+      <div class="grid2">
+        <label class="fld"><span>Обхват головы, <i class="un">см</i></span><input class="txt" id="hat_circ" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Посадка, %</span><input class="txt" id="hat_ease" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Общая высота, <i class="un">см</i></span><input class="txt" id="hat_height" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Высота макушки, <i class="un">см</i></span><input class="txt" id="hat_crown" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Клиньев на макушке</span><input class="txt" id="hat_wedges" type="text" inputmode="numeric" autocomplete="off"></label>
+      </div>
+      <p class="foot">Посадка −10% значит, что шапка по обхвату на 10% меньше головы и плотно облегает. Для свободной шапки впишите 0. Макушка это верхняя часть с убавками.</p>
+    </div>
+
+    <div class="panel" id="f_mit" hidden>
+      <h2>Варежка</h2>
+      <div class="grid2">
+        <label class="fld"><span>Обхват ладони, <i class="un">см</i></span><input class="txt" id="mit_circ" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Посадка, %</span><input class="txt" id="mit_ease" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Общая длина, <i class="un">см</i></span><input class="txt" id="mit_length" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Высота верхушки, <i class="un">см</i></span><input class="txt" id="mit_top" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <p class="foot">Длина считается от начала манжеты до кончика. Место под большой палец рассчитайте отдельно в разделе «Сколько набрать» по обхвату пальца.</p>
+    </div>
+
+    <div class="panel" id="f_sc" hidden>
+      <h2>Шарф</h2>
+      <div class="grid2">
+        <label class="fld"><span>Ширина, <i class="un">см</i></span><input class="txt" id="sc_w" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Длина, <i class="un">см</i></span><input class="txt" id="sc_l" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <div class="chips" aria-label="Готовые размеры">
+        <button class="chip" type="button" data-preset="sc:15:150">Узкий 15×150 см</button>
+        <button class="chip" type="button" data-preset="sc:25:180">Обычный 25×180 см</button>
+        <button class="chip" type="button" data-preset="sc:35:200">Широкий 35×200 см</button>
+      </div>
+    </div>
+
+    <div class="panel" id="f_bl" hidden>
+      <h2>Плед</h2>
+      <div class="grid2">
+        <label class="fld"><span>Ширина, <i class="un">см</i></span><input class="txt" id="bl_w" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Длина, <i class="un">см</i></span><input class="txt" id="bl_l" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <div class="chips" aria-label="Готовые размеры">
+        <button class="chip" type="button" data-preset="bl:70:90">Для малыша 70×90</button>
+        <button class="chip" type="button" data-preset="bl:120:150">Диванный 120×150</button>
+        <button class="chip" type="button" data-preset="bl:150:200">Односпальный 150×200</button>
+        <button class="chip" type="button" data-preset="bl:200:220">Двуспальный 200×220</button>
+      </div>
+    </div>
+
+    <div id="shapeSketch"></div>
+    <div class="tiles" id="shapeTiles"></div>
+    <div class="lines" id="shapeLines" role="status"></div>
+    <div class="actions">
+      <button class="btn" type="button" data-copy="shape">Скопировать результат</button>
+      <button class="btn" type="button" id="shapeDec">Расписать убавки</button>
+      <button class="btn" type="button" id="shapeYarn">Посчитать пряжу</button>
+    </div>
+  </section>
+
+    <section id="v_yarn" class="wrap" style="gap:16px" aria-label="Расход пряжи" hidden>
+    <div class="panel">
+      <h2>Образец</h2>
+      <div class="grid2">
+        <label class="fld"><span>Ширина образца, <i class="un">см</i></span><input class="txt" id="y_sw" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Высота образца, <i class="un">см</i></span><input class="txt" id="y_sh" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Вес образца, г</span><input class="txt" id="y_sg" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <p class="foot">Взвесьте весь образец целиком (без хвостиков и лишних петель по краям) и измерьте его размер.</p>
+    </div>
+    <div class="panel">
+      <h2>Изделие</h2>
+      <div class="grid2">
+        <label class="fld"><span>Ширина детали, <i class="un">см</i></span><input class="txt" id="y_pw" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Высота детали, <i class="un">см</i></span><input class="txt" id="y_ph" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Сколько таких деталей</span><input class="txt" id="y_pc" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label class="fld"><span>Запас, %</span><input class="txt" id="y_margin" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <label class="fld"><span>Вес мотка, г</span><input class="txt" id="y_skW" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="fld"><span>Метраж мотка, м</span><input class="txt" id="y_skL" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="tiles" id="yarnTiles"></div>
+    <div class="lines" id="yarnLines" role="status"></div>
+    <div class="actions"><button class="btn" type="button" data-copy="yarn">Скопировать результат</button></div>
+  </section>
+
+  <div class="foot" id="copyMsg" role="status"></div>
+  <textarea class="xfer" id="copyBox" readonly hidden aria-label="Текст для копирования"></textarea>
+
+  <details class="panel">
+    <summary>Перенос и резервная копия</summary>
+    <div class="inner">
+      <p class="foot">Нажмите «Скопировать данные», отправьте текст себе (в заметки или мессенджер) и вставьте его в это поле на другом устройстве.</p>
+      <textarea class="xfer" id="xfer" spellcheck="false" placeholder="Сюда вставьте скопированные данные" aria-label="Данные"></textarea>
+      <div class="actions">
+        <button class="btn" id="exp" type="button">Скопировать данные</button>
+        <button class="btn" id="imp" type="button">Загрузить из поля</button>
+      </div>
+      <div class="foot" id="xmsg" role="status"></div>
+    </div>
+  </details>
+
+  <p class="foot">Значения сохраняются автоматически в этом браузере на этом устройстве. Расчёт приблизительный: плотность вязания в разных местах изделия может отличаться, поэтому после первых 10 см проверьте ширину и при необходимости пересчитайте.</p>
+</div>
+
+<script>
+(function(){
+  var KEY='gauge-calc-v1';
+  var $=function(id){return document.getElementById(id)};
+  var M;
+  M={
+  lang:'ru', loc:'ru-RU',
+  forms:{
+    st:{n:['петля','петли','петель'],a:['петлю','петли','петель'],g:['петли','петель','петель'],d:['петле','петли','петель']},
+    row:{n:['ряд','ряда','рядов']},
+    rnd:{n:['круг','круга','кругов']},
+    time:{n:['раз','раза','раз']},
+    skein:{n:['моток','мотка','мотков']},
+    gram:{n:['грамм','грамма','граммов']},
+    inc:{n:['прибавка','прибавки','прибавок']},
+    dec:{n:['убавка','убавки','убавок']}
+  },
+  idx:function(n){n=Math.abs(Math.round(n))%100;var d=n%10;if(n>10&&n<20)return 2;if(d>1&&d<5)return 1;if(d===1)return 0;return 2},
+  modes:{cast:'Сколько набрать',size:'Какой размер',conv:'Пересчёт схемы',dec:'Прибавки и убавки',shape:'Изделия',yarn:'Пряжа'},
+  shapes:{hat:'Шапка',mit:'Варежка',sc:'Шарф',bl:'Плед'},
+  un:{cm:'см',in:'дюймов'}, us:{cm:'см',in:'дюйм.'}, sq:{cm:'см²',in:'кв. дюймов'},
+  untitled:'Без названия',
+  titles:{cast:'Сколько набрать',size:'Какой размер получится',conv:'Пересчёт схемы под мой образец',dec:'Прибавки и убавки',shape:'Изделие',yarn:'Расход пряжи'},
+
+  needGauge:'Заполните образец: число петель и рядов и размер образца должны быть больше нуля.',
+  /* cast */
+  castTileSt:function(N){return W('st',N,'a')+' набрать'},
+  castLine:function(raw,N,w,wash,u){return 'Без округления получается '+fmt(raw,1)+'. Ближайшее подходящее число петель: <b>'+N+'</b>, ширина связанного около <b>'+fmt(w,1)+' '+u+'</b>'+(wash!=null?', после стирки около <b>'+fmt(wash,1)+' '+u+'</b>':'')+'.'},
+  altPart:function(less,kind,n,size,u){return (less?'меньше: ':'больше: ')+n+' '+W(kind,n)+' ('+fmt(size,1)+' '+u+')'},
+  castAlts:function(j){return 'Другие варианты по кратности: '+j+'.'},
+  rowAlts:function(j){return 'Другие варианты по раппорту: '+j+'.'},
+  chain:function(total,N,extra){return 'Начальная цепочка: <b>'+total+'</b> '+W('st',total)+' ('+N+' + '+extra+' подъёмных).'},
+  needWidth:'Впишите ширину изделия.', needHeight:'Впишите высоту изделия.',
+  castTileRow:function(R){return W('row',R)+' связать'},
+  castRowLine:function(raw,R,h,wash,u){return 'Без округления получается '+fmt(raw,1)+'. Ближайшее подходящее число рядов: <b>'+R+'</b>, высота связанного около <b>'+fmt(h,1)+' '+u+'</b>'+(wash!=null?', после стирки около <b>'+fmt(wash,1)+' '+u+'</b>':'')+'.'},
+  /* size */
+  sizeW:function(u){return 'ширина, '+u}, sizeH:function(u){return 'высота, '+u},
+  sizeNeed:'Впишите число петель или рядов.',
+  sizeWash:function(p,w,h,u){return 'После стирки при усадке '+fmt(p,1)+'%: ширина около '+w+' '+u+', высота около '+h+' '+u+'.'},
+  sizeDens:function(st,rw,units){return 'При вашем образце в 1 '+(units==='in'?'дюйме':'см')+' умещается '+fmt(st,2)+' петли и '+fmt(rw,2)+' ряда.'},
+  /* conv */
+  needPattern:'Заполните образец из схемы.',
+  convTileSt:function(n){return W('st',n)+' у вас'}, convTileRow:function(n){return W('row',n)+' у вас'},
+  convNeed:'Впишите число петель или рядов из схемы.',
+  convSt:function(ns,fs,rs){return 'Петли: '+fmt(ns,0)+' × '+fmt(fs,3)+' = '+fmt(ns*fs,1)+', округляем до '+rs+'.'},
+  convRw:function(nr,fr,rr){return 'Ряды: '+fmt(nr,0)+' × '+fmt(fr,3)+' = '+fmt(nr*fr,1)+', округляем до '+rr+'.'},
+  convSame:'Ваша плотность по ширине почти совпадает со схемой. Пересчёт почти не нужен.',
+  convDev:function(t,pct,per10){return 'По ширине у вас вязание '+(t?'плотнее':'свободнее')+' схемы на '+fmt(pct,0)+'%: на 10 см у вас на '+fmt(per10,1)+' '+W('st',per10,'a')+' '+(t?'больше':'меньше')+'.'},
+  convTool:function(t){return '<b>Подсказка по инструменту:</b> чтобы совпасть со схемой, возьмите '+(t?'крючок или спицы <b>потолще</b>':'крючок или спицы <b>потоньше</b>')+'. Ориентир: на каждые 1–2 петли разницы на 10 см нужно менять инструмент примерно на 0,25–0,5 мм. Это приблизительно, поэтому свяжите новый образец и измерьте его заново. Либо оставьте свой инструмент и пользуйтесь пересчитанными числами.'},
+  convRound:'Если узор повторяется через определённое число петель, подгоните результат до ближайшего подходящего.',
+  /* schedule */
+  schFill:'Заполните числа: сколько петель сейчас, сколько должно стать и за сколько рядов.',
+  schSame:'Число петель не меняется: впишите разные значения.',
+  schBig:'Слишком много рядов. Разбейте расчёт на части (не больше 1000 рядов).',
+  schMany:function(D,R,mn){return 'Чтобы изменить '+D+' '+W('st',D,'a')+' за '+R+' '+W('row',R)+', нужно менять минимум по '+mn+' за один раз. Увеличьте это число или число рядов.'},
+  rowFill:'Заполните числа: сколько петель в ряду сейчас и сколько должно стать.',
+  rowIncMany:function(D,A){return 'За один ряд нельзя прибавить '+D+' '+W('st',D,'a')+' к '+A+': прибавок больше, чем петель. Разделите прибавки на несколько рядов.'},
+  rowDecMany:function(D,A){return 'Нельзя убавить '+D+' '+W('st',D,'a')+' в ряду из '+A+' '+W('st',A,'g')+': каждая убавка берёт 2 петли, нужно не меньше '+(2*D)+'. Разделите убавки на несколько рядов.'},
+  rowTileN:function(D,inc){return W(inc?'inc':'dec',D)+' в ряду'},
+  rowTileAvg:function(x){return W('st',x)+' между ними в среднем'},
+  rowHead:function(A,D,B,inc){return 'В ряду из '+A+' '+W('st',A,'g')+' '+(inc?'прибавьте ':'убавьте ')+D+' '+W('st',D,'a')+', чтобы стало '+B+'.'},
+  rowAllAdj:'Все убавки идут подряд, без простых петель между ними.',
+  rowRepeat:function(D,p,inc){return 'Повторите '+D+' '+W('time',D)+': вяжите <b>'+p+'</b> '+W('st',p,'a')+', затем '+(inc?'прибавка':'убавка')+'.'},
+  rowPart:function(c,z){return '<b>'+c+'</b> '+W('time',c)+' по <b>'+z+'</b> '+W('st',z,'d')},
+  rowGroups:function(parts,inc){return 'Группы бывают двух размеров: '+parts.join(' и ')+'. Каждая группа заканчивается '+(inc?'прибавкой':'убавкой')+'. Порядок в списке ниже уже подобран так, чтобы изменения легли равномерно.'},
+  rowDecNote:function(P,D,A){return 'Убавка берёт две петли, поэтому в ряду: '+P+' простых + '+(2*D)+' в убавках = '+A+'.'},
+  rowItem:function(i,z,inc){return '<li><span>Шаг '+i+'</span><b>'+z+' п.</b><span class="sub">'+(inc?'прибавка':'убавка')+'</span></li>'},
+  rowMore:function(n){return '<li><span class="sub">…и ещё '+n+' (список сокращён)</span><span></span><span></span></li>'},
+  rowAria:function(inc){return 'Порядок '+(inc?'прибавок':'убавок')+' в ряду'},
+  rowCopy:function(i,z,inc){return 'Шаг '+i+': '+z+' п., '+(inc?'прибавка':'убавка')},
+  decTileN:function(n,inc){return W('row',n)+' с '+(inc?'прибавками':'убавками')},
+  decTileAvg:function(x){return W('row',x)+' между изменениями в среднем'},
+  decHead:function(A,B,R,D,d){return 'С '+A+' до '+B+' '+W('st',B,'g')+' за '+R+' '+W('row',R)+': всего '+D+' '+W('st',D)+', по '+d+' за раз.'},
+  decOne:function(p){return 'Одно изменение в ряду <b>'+p+'</b>.'},
+  decEvery:function(first,k,n){return 'Первое изменение в ряду <b>'+first+'</b>, затем в каждом <b>'+k+'-м</b> ряду, всего '+n+' раз.'},
+  decGap:function(g,c){return 'через '+g+' '+W('row',g)+' ('+c+' '+W('time',c)+')'},
+  decAlt:function(first,parts){return 'Первое изменение в ряду <b>'+first+'</b>. Дальше расстояния чередуются: '+parts.join(' и ')+'. Порядок смотрите в списке ниже.'},
+  decLast:function(a,B){return 'В последний раз изменение будет на '+a+' '+W('st',a,'a')+', чтобы получилось ровно '+B+'.'},
+  decItem:function(row,a,c,inc){return '<li><span>Ряд '+row+'</span><b>'+(inc?'+':'−')+a+'</b><span class="sub">'+c+' п.</span></li>'},
+  decMore:function(n){return '<li><span class="sub">…и ещё '+n+' (список сокращён)</span><span></span><span></span></li>'},
+  decAria:function(inc){return 'Ряды с '+(inc?'прибавками':'убавками')},
+  decCopy:function(row,a,c,inc){return 'Ряд '+row+': '+(inc?'+':'−')+a+' → '+c+' п.'},
+  dALabel:'Петель сейчас', dALabelRow:'Петель в ряду сейчас',
+  /* shapes */
+  skAria:'Эскиз изделия',
+  skSt:function(N,w,us){return N+' п. · '+w+' '+us}, skRw:function(R){return R+' р.'},
+  skCrown:function(t,Rc){return (t==='hat'?'макушки':'верхушки')+' '+Rc+' р.'},
+  shFill:'Заполните обхват, общую высоту (длину) и высоту макушки (верхушки).',
+  shCrownBig:'Высота макушки (верхушки) должна быть меньше общей высоты (длины).',
+  shTileSt:function(N){return W('st',N)+' в круге'}, shTileRows:'рядов (кругов) всего',
+  shCast:function(t,N,wd,w,wash,u){return 'Набрать <b>'+N+'</b> '+W('st',N,'a')+' (кратно '+wd+'), замкнуть в круг. Окружность '+(t==='hat'?'шапки':'варежки')+' получится около <b>'+fmt(w,1)+' '+u+'</b>'+(wash!=null?', после стирки около <b>'+fmt(wash,1)+' '+u+'</b>':'')+'.'},
+  shBody:function(t,Rb,len,u){return 'До начала '+(t==='hat'?'макушки':'верхушки')+': <b>'+Rb+'</b> '+W('rnd',Rb)+' (около '+fmt(len,1)+' '+u+').'},
+  shCrown:function(t,Rc,C,wd,N,E,u){return 'Часть '+(t==='hat'?'макушки':'верхушки')+': <b>'+Rc+'</b> '+W('rnd',Rc)+' (около '+fmt(C,1)+' '+u+'), убавки по '+wd+' '+W('st',wd,'d')+' за один круг убавок, с '+N+' до '+E+' петель.'},
+  shWarn:function(t,nd,Rc){var p=t==='hat'?'макушке':'верхушке', g=t==='hat'?'макушки':'верхушки';return 'Убавок нужно '+nd+', а кругов в '+p+' только '+Rc+'. Увеличьте высоту '+g+(t==='hat'?', уменьшите число клиньев':'')+' или убавляйте чаще.'},
+  shEvery:function(t,x){return 'Круг с убавками примерно через каждые '+fmt(x,1)+' '+W('rnd',x)+'. Точный порядок покажет раздел «Прибавки и убавки».'},
+  mitThumb:'Место под большой палец рассчитайте отдельно в разделе «Сколько набрать» по обхвату пальца.',
+  rcNeed:'Впишите ширину и длину.',
+  rcLine:function(t,w,l,u,wash){return 'Ширина '+(t==='sc'?'шарфа':'пледа')+' получится около <b>'+fmt(w,1)+' '+u+'</b>, длина около <b>'+fmt(l,1)+' '+u+'</b>'+(wash?' (после стирки)':'')+'.'},
+  rcChain:function(total){return 'Начальная цепочка: <b>'+total+'</b> '+W('st',total)+'.'},
+  rcMult:function(m,e){return 'Число петель подобрано по кратности узора: '+m+' × k'+(e?' + '+e:'')+'.'},
+  /* yarn */
+  yNeedSample:'Впишите размер и вес образца: так страница узнает, сколько пряжи уходит на единицу площади.',
+  yNeedPiece:'Впишите размер детали изделия.',
+  yTileG:function(t){return W('gram',t)+' пряжи'},
+  yTileSk:function(n,w){return W('skein',n)+' по '+fmt(w,0)+' г'},
+  ySkeins:function(x){return 'Это '+fmt(x,2)+' мотка. Покупайте целое число мотков и лучше из одной партии: её номер указан на этикетке.'},
+  yMeters:function(m){return 'Метраж: около <b>'+fmt(m,0)+' м</b>.'},
+  yDens:function(d,area,base,mg,total,sq){return 'Расход образца: '+fmt(d*100,1)+' г на 100 '+sq+'. Площадь деталей: '+fmt(area,0)+' '+sq+'. Без запаса получается около '+fmt(base,0)+' г, с запасом '+fmt(mg,0)+'% около '+fmt(total,0)+' г.'},
+  yShrink:function(p){return 'Учтена усадка '+fmt(p,1)+'%: пришлось связать большую площадь, чтобы после стирки получился нужный размер.'},
+  yNote:'Расчёт приблизительный. Для узоров с рельефом (косы, ажур, шишечки) пряжи уходит больше, чем в гладком образце: взвешивайте образец тем же узором.',
+  /* derived */
+  derivedMain:function(b,r,units){return 'В 1 '+(units==='in'?'дюйме':'см')+': '+fmt(b,2)+' петли и '+fmt(r,2)+' ряда'},
+  derivedNeed:'Введите число петель, рядов и размер образца',
+  derivedUsing:function(n,st,rw,units){return 'Считаем по образцу «'+n+'»: '+fmt(st,2)+' петли и '+fmt(rw,2)+' ряда в 1 '+(units==='in'?'дюйме':'см')},
+  /* saved */
+  noSaved:'Пока нет сохранённых образцов',
+  savedDesc:function(q){return q.st+' п. и '+q.rw+' р. на '+q.stW+'×'+q.rwH+' '+(q.units==='in'?'дюйм.':'см')},
+  mainGauge:'Основной образец (поля выше)',
+  delBtn:'Удалить', delSure:'Точно удалить?',
+  nameNeed:'Впишите название образца.', gaugeFirst:'Сначала заполните образец выше.',
+  savedMax:'Сохранено максимальное число образцов. Удалите ненужные.',
+  savedOk:function(n){return 'Сохранено: '+n+'. Теперь расчёты идут по этому образцу.'},
+  applied:function(n){return 'Образец «'+n+'» загружен в поля выше.'},
+  deleted:'Образец удалён.',
+  copyFail:'Не удалось скопировать автоматически. Текст выделен ниже, скопируйте его вручную.',
+  copied:'Скопировано.',
+  impBtn:'Загрузить из поля', impAskBtn:'Заменить текущие данные?',
+  expOk:'Скопировано. Вставьте в поле на другом устройстве и нажмите «Загрузить из поля».',
+  expManual:'Текст выделен. Скопируйте его вручную.',
+  impBad:'Не получилось прочитать данные. Вставьте текст целиком, как он был скопирован.',
+  impAsk:'Значения и образцы на этом устройстве будут заменены загруженными. Нажмите ещё раз для подтверждения.',
+  impDone:function(n){return 'Готово. Загружено образцов: '+n+'.'}
+};
+  document.documentElement.lang='ru';
+  function pn(v){v=parseFloat(String(v).replace('−','-').replace(',','.').replace(/\s/g,''));return isNaN(v)?0:v}
+  function fmt(n,d){
+    d=d==null?1:d; var f=Math.pow(10,d), r=Math.round(n*f)/f;
+    return r.toLocaleString(M.loc,{minimumFractionDigits:0,maximumFractionDigits:d});
+  }
+  function W(kind,n,cs){var f=M.forms[kind]; return (f[cs]||f.n)[M.idx(n)]}
+  function uid(){return 'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+  function str(v,def){v=String(v==null?def:v).trim().slice(0,10);return v===''?String(def):v}
+  function strip(h){return String(h).replace(/<[^>]+>/g,'')}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+  var MODES=['cast','size','conv','dec','shape','yarn'];
+  var SHAPES=['hat','mit','sc','bl'];
+  var DEF={
+    units:'cm', mode:'cast', shape:'hat', use:'main', shrink:'0',
+    g:{st:'18',stW:'10',rw:'24',rwH:'10'},
+    t:{w:'50',h:'60'},
+    r:{mult:'1',edge:'0',rowMult:'1',extra:'0'},
+    s:{st:'90',rw:'120'},
+    p:{st:'20',stW:'10',rw:'28',rwH:'10',nst:'100',nrw:'60'},
+    d:{mode:'rows',a:'90',b:'70',rows:'20',per:'2'},
+    hat:{circ:'56',ease:'-10',height:'22',crown:'8',wedges:'8'},
+    mit:{circ:'20',ease:'-5',length:'24',top:'6'},
+    sc:{w:'25',l:'180'},
+    bl:{w:'120',l:'150'},
+    y:{sw:'15',sh:'15',sg:'12',pw:'50',ph:'60',pc:'1',margin:'10',skW:'50',skL:'100'},
+    saved:[]
+  };
+  var GROUPS=['g','t','r','s','p','d','hat','mit','sc','bl','y'];
+
+  function clean(s){
+    s=s&&typeof s==='object'?s:{};
+    var o={units:s.units==='in'?'in':'cm',saved:[]};
+    o.mode=MODES.indexOf(s.mode)>=0?s.mode:'cast';
+    o.shape=SHAPES.indexOf(s.shape)>=0?s.shape:'hat';
+    o.shrink=str(s.shrink,'0');
+    GROUPS.forEach(function(k){
+      o[k]={}; var src=s[k]&&typeof s[k]==='object'?s[k]:{};
+      Object.keys(DEF[k]).forEach(function(f){o[k][f]=str(src[f],DEF[k][f])});
+    });
+    if(o.d.mode!=='row') o.d.mode='rows';
+    (Array.isArray(s.saved)?s.saved:[]).slice(0,100).forEach(function(q){
+      if(!q||typeof q!=='object') return;
+      var id=String(q.id||'').replace(/[^\w-]/g,'').slice(0,24)||uid();
+      o.saved.push({id:id,name:String(q.name||M.untitled).slice(0,40),
+        units:q.units==='in'?'in':'cm',st:str(q.st,'18'),stW:str(q.stW,'10'),rw:str(q.rw,'24'),rwH:str(q.rwH,'10')});
+    });
+    o.use=String(s.use||'main');
+    if(o.use!=='main' && !o.saved.some(function(q){return q.id===o.use})) o.use='main';
+    return o;
+  }
+  function load(){
+    try{var raw=localStorage.getItem(KEY); if(raw) return clean(JSON.parse(raw));}catch(e){}
+    return clean({});
+  }
+  var S=load(), delConfirm=false, RES={};
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+  var FIELDS=[
+    ['g_st','g','st'],['g_stW','g','stW'],['g_rw','g','rw'],['g_rwH','g','rwH'],['shrink',null,'shrink'],
+    ['t_w','t','w'],['t_h','t','h'],
+    ['r_mult','r','mult'],['r_edge','r','edge'],['r_rowMult','r','rowMult'],['r_extra','r','extra'],
+    ['s_st','s','st'],['s_rw','s','rw'],
+    ['p_st','p','st'],['p_stW','p','stW'],['p_rw','p','rw'],['p_rwH','p','rwH'],['p_nst','p','nst'],['p_nrw','p','nrw'],
+    ['d_a','d','a'],['d_b','d','b'],['d_rows','d','rows'],['d_per','d','per'],
+    ['hat_circ','hat','circ'],['hat_ease','hat','ease'],['hat_height','hat','height'],['hat_crown','hat','crown'],['hat_wedges','hat','wedges'],
+    ['mit_circ','mit','circ'],['mit_ease','mit','ease'],['mit_length','mit','length'],['mit_top','mit','top'],
+    ['sc_w','sc','w'],['sc_l','sc','l'],['bl_w','bl','w'],['bl_l','bl','l'],
+    ['y_sw','y','sw'],['y_sh','y','sh'],['y_sg','y','sg'],['y_pw','y','pw'],['y_ph','y','ph'],['y_pc','y','pc'],['y_margin','y','margin'],['y_skW','y','skW'],['y_skL','y','skL']
+  ];
+  function getF(f){return f[1]?S[f[1]][f[2]]:S[f[2]]}
+  function setF(f,v){if(f[1]) S[f[1]][f[2]]=v; else S[f[2]]=v}
+  function fillInputs(){FIELDS.forEach(function(f){$(f[0]).value=getF(f)})}
+  function unitName(){return M.un[S.units]}
+  function unitShort(){return M.us[S.units]}
+
+  /* ---------- Basic values ---------- */
+  function perUnit(count,size){count=pn(count);size=pn(size);return (count>0&&size>0)?count/size:0}
+  function savedById(id){for(var i=0;i<S.saved.length;i++) if(S.saved[i].id===id) return S.saved[i]; return null}
+  function gauge(){
+    var g=S.g,u=S.units;
+    if(S.use!=='main'){var q=savedById(S.use); if(q){g=q;u=q.units}}
+    var sp=perUnit(g.st,g.stW), rp=perUnit(g.rw,g.rwH);
+    if(u!==S.units){var k=(u==='in')?1/2.54:2.54; sp*=k; rp*=k;}
+    return {st:sp,rw:rp};
+  }
+  function shrinkPct(){return Math.max(-30,Math.min(50,pn(S.shrink)))}
+  function fK(){return 1/(1-shrinkPct()/100)}
+  function tile(val,label){return [String(val),label]}
+  function line(t,cls){return [t,cls||'']}
+  function needGauge(){return {tiles:[],lines:[line(M.needGauge,'warn')]}}
+  function castCount(raw,mult,edge){var k=Math.max(1,Math.round((raw-edge)/mult));return edge+k*mult}
+  function castAlts(raw,mult,edge){
+    var kl=Math.max(1,Math.floor((raw-edge)/mult)), kh=Math.max(1,Math.ceil((raw-edge)/mult));
+    return [edge+kl*mult,edge+kh*mult];
+  }
+
+  /* ---------- Modes ---------- */
+  function calcCast(){
+    var gp=gauge(); if(!(gp.st>0&&gp.rw>0)) return needGauge();
+    var stPer=gp.st, rwPer=gp.rw, u=unitName(), f=fK(), wash=Math.abs(shrinkPct())>0.01;
+    var w=pn(S.t.w), h=pn(S.t.h);
+    var mult=Math.max(1,Math.round(pn(S.r.mult))), edge=Math.max(0,Math.round(pn(S.r.edge)));
+    var rowMult=Math.max(1,Math.round(pn(S.r.rowMult))), extra=Math.max(0,Math.round(pn(S.r.extra)));
+    var m={tiles:[],lines:[]};
+    if(w>0){
+      var raw=w*f*stPer, N=castCount(raw,mult,edge);
+      m.tiles.push(tile(N,M.castTileSt(N)));
+      m.lines.push(line(M.castLine(raw,N,N/stPer,wash?N/stPer/f:null,u)));
+      if(mult>1){
+        var a=castAlts(raw,mult,edge), alts=[];
+        if(a[0]!==N) alts.push(M.altPart(true,'st',a[0],a[0]/stPer/f,u));
+        if(a[1]!==N) alts.push(M.altPart(false,'st',a[1],a[1]/stPer/f,u));
+        if(alts.length) m.lines.push(line(M.castAlts(alts.join('; ')),'alt'));
+      }
+      if(extra>0) m.lines.push(line(M.chain(N+extra,N,extra)));
+    }else m.lines.push(line(M.needWidth,'alt'));
+    if(h>0){
+      var rawR=h*f*rwPer, R=Math.max(1,Math.round(rawR/rowMult))*rowMult;
+      m.tiles.push(tile(R,M.castTileRow(R)));
+      m.lines.push(line(M.castRowLine(rawR,R,R/rwPer,wash?R/rwPer/f:null,u)));
+      if(rowMult>1){
+        var rl=Math.max(1,Math.floor(rawR/rowMult))*rowMult, rh=Math.max(1,Math.ceil(rawR/rowMult))*rowMult, ra=[];
+        if(rl!==R) ra.push(M.altPart(true,'row',rl,rl/rwPer/f,u));
+        if(rh!==R) ra.push(M.altPart(false,'row',rh,rh/rwPer/f,u));
+        if(ra.length) m.lines.push(line(M.rowAlts(ra.join('; ')),'alt'));
+      }
+    }else m.lines.push(line(M.needHeight,'alt'));
+    return m;
+  }
+
+  function calcSize(){
+    var gp=gauge(); if(!(gp.st>0&&gp.rw>0)) return needGauge();
+    var u=unitName(), f=fK(), wash=Math.abs(shrinkPct())>0.01;
+    var st=pn(S.s.st), rw=pn(S.s.rw), m={tiles:[],lines:[]};
+    if(st>0) m.tiles.push(tile(fmt(st/gp.st,1),M.sizeW(u)));
+    if(rw>0) m.tiles.push(tile(fmt(rw/gp.rw,1),M.sizeH(u)));
+    if(!(st>0)&&!(rw>0)) m.lines.push(line(M.sizeNeed,'alt'));
+    else{
+      if(wash) m.lines.push(line(M.sizeWash(shrinkPct(),st>0?fmt(st/gp.st/f,1):'—',rw>0?fmt(rw/gp.rw/f,1):'—',u)));
+      m.lines.push(line(M.sizeDens(gp.st,gp.rw,S.units),'alt'));
+    }
+    return m;
+  }
+
+  function calcConv(){
+    var gp=gauge(); if(!(gp.st>0&&gp.rw>0)) return needGauge();
+    var pSt=perUnit(S.p.st,S.p.stW), pRw=perUnit(S.p.rw,S.p.rwH);
+    if(!(pSt>0&&pRw>0)) return {tiles:[],lines:[line(M.needPattern,'warn')]};
+    var fs=gp.st/pSt, fr=gp.rw/pRw, ns=pn(S.p.nst), nr=pn(S.p.nrw), m={tiles:[],lines:[]};
+    var rs=Math.max(1,Math.round(ns*fs)), rr=Math.max(1,Math.round(nr*fr));
+    if(ns>0) m.tiles.push(tile(rs,M.convTileSt(rs)));
+    if(nr>0) m.tiles.push(tile(rr,M.convTileRow(rr)));
+    if(!(ns>0)&&!(nr>0)) m.lines.push(line(M.convNeed,'alt'));
+    if(ns>0) m.lines.push(line(M.convSt(ns,fs,rs)));
+    if(nr>0) m.lines.push(line(M.convRw(nr,fr,rr)));
+    var dev=(fs-1)*100;
+    if(Math.abs(dev)<2) m.lines.push(line(M.convSame,'alt'));
+    else{
+      var per10=Math.abs(gp.st-pSt)*(S.units==='in'?10/2.54:10);
+      var tighter=dev>0;
+      m.lines.push(line(M.convDev(tighter,Math.abs(dev),per10),'alt'));
+      m.lines.push(line(M.convTool(tighter),'alt'));
+    }
+    m.lines.push(line(M.convRound,'alt'));
+    return m;
+  }
+
+  /* Distribution of increases and decreases over rows */
+  function schedule(A,B,R,d){
+    if(!(A>0&&B>0&&R>0)) return {err:M.schFill};
+    if(A===B) return {err:M.schSame};
+    if(R>1000) return {err:M.schBig};
+    d=Math.max(1,d);
+    var D=Math.abs(A-B), n=Math.ceil(D/d);
+    if(n>R) return {err:M.schMany(D,R,Math.ceil(D/R))};
+    var pos=[],amt=[];
+    for(var i=0;i<n;i++){pos.push(Math.floor((i+0.5)*R/n)+1); amt.push(i<n-1?d:D-(n-1)*d);}
+    var sign=B<A?-1:1, cur=A, list=[];
+    for(var j=0;j<n;j++){cur+=sign*amt[j]; list.push({row:pos[j],amt:amt[j],count:cur});}
+    var gaps={}, order=[];
+    for(var k=0;k<n-1;k++){var gp=pos[k+1]-pos[k]; if(!(gp in gaps)){gaps[gp]=0;order.push(gp);} gaps[gp]++;}
+    var perRow=[], idx=0, c=A;
+    for(var r=1;r<=R;r++){ if(idx<n && pos[idx]===r){c=list[idx].count;idx++;} perRow.push(c); }
+    return {D:D,n:n,pos:pos,amt:amt,list:list,gaps:gaps,order:order,sign:sign,perRow:perRow,d:d};
+  }
+  function rle(arr){
+    var out=[],i=0;
+    while(i<arr.length){var j=i; while(j<arr.length&&arr[j]===arr[i]) j++; var n=j-i; out.push(n>1?arr[i]+'*'+n:String(arr[i])); i=j;}
+    return out.join(', ');
+  }
+  function calcDecRow(){
+    var A=Math.round(pn(S.d.a)), B=Math.round(pn(S.d.b));
+    if(!(A>0&&B>0)) return {tiles:[],lines:[line(M.rowFill,'warn')]};
+    if(A===B) return {tiles:[],lines:[line(M.schSame,'warn')]};
+    var inc=B>A, D=Math.abs(B-A);
+    if(inc&&D>A) return {tiles:[],lines:[line(M.rowIncMany(D,A),'warn')]};
+    if(!inc&&2*D>A) return {tiles:[],lines:[line(M.rowDecMany(D,A),'warn')]};
+    var P=inc?A:A-2*D, sizes=[], i;
+    for(i=0;i<D;i++) sizes.push(Math.floor((i+1)*P/D)-Math.floor(i*P/D));
+    var cnt={}, order=[];
+    sizes.forEach(function(z){if(!(z in cnt)){cnt[z]=0;order.push(z);} cnt[z]++;});
+    order.sort(function(a,b){return a-b});
+    var m={tiles:[],lines:[]};
+    m.tiles.push(tile(D,M.rowTileN(D,inc)));
+    m.tiles.push(tile(fmt(P/D,1),M.rowTileAvg(P/D)));
+    m.lines.push(line(M.rowHead(A,D,B,inc)));
+    if(order.length===1){
+      m.lines.push(line(order[0]===0?M.rowAllAdj:M.rowRepeat(D,order[0],inc)));
+    }else{
+      var parts=order.map(function(z){return M.rowPart(cnt[z],z)});
+      m.lines.push(line(M.rowGroups(parts,inc)));
+    }
+    if(!inc) m.lines.push(line(M.rowDecNote(P,D,A),'alt'));
+    var items=sizes.slice(0,120).map(function(z,k){return M.rowItem(k+1,z,inc)}).join('');
+    if(sizes.length>120) items+=M.rowMore(sizes.length-120);
+    m.extra='<ul class="sched" aria-label="'+M.rowAria(inc)+'">'+items+'</ul>';
+    m.copyExtra=sizes.map(function(z,k){return M.rowCopy(k+1,z,inc)});
+    return m;
+  }
+  function calcDec(){
+    RES.decSched=null;
+    if(S.d.mode==='row') return calcDecRow();
+    var A=Math.round(pn(S.d.a)),B=Math.round(pn(S.d.b)),R=Math.round(pn(S.d.rows)),d=Math.round(pn(S.d.per));
+    var sc=schedule(A,B,R,d||1);
+    if(sc.err){RES.decSched=null;return {tiles:[],lines:[line(sc.err,'warn')]};}
+    RES.decSched=sc;
+    var inc=sc.sign>0, m={tiles:[],lines:[]};
+    m.tiles.push(tile(sc.n,M.decTileN(sc.n,inc)));
+    m.tiles.push(tile(fmt(R/sc.n,1),M.decTileAvg(R/sc.n)));
+    m.lines.push(line(M.decHead(A,B,R,sc.D,sc.d)));
+    if(sc.n===1){
+      m.lines.push(line(M.decOne(sc.pos[0])));
+    }else if(sc.order.length===1){
+      m.lines.push(line(M.decEvery(sc.pos[0],sc.order[0],sc.n)));
+    }else{
+      var parts=sc.order.slice().sort(function(a,b){return a-b}).map(function(g){return M.decGap(g,sc.gaps[g])});
+      m.lines.push(line(M.decAlt(sc.pos[0],parts)));
+    }
+    if(sc.amt[sc.n-1]!==sc.d) m.lines.push(line(M.decLast(sc.amt[sc.n-1],B),'alt'));
+    var items=sc.list.slice(0,80).map(function(it){return M.decItem(it.row,it.amt,it.count,inc)}).join('');
+    if(sc.list.length>80) items+=M.decMore(sc.list.length-80);
+    m.extra='<ul class="sched" aria-label="'+M.decAria(inc)+'">'+items+'</ul>';
+    m.copyExtra=sc.list.map(function(it){return M.decCopy(it.row,it.amt,it.count,inc)});
+    return m;
+  }
+
+  /* Shapes */
+  function sketchRect(w,l,top,r1,r2){
+    var asp=(w>0&&l>0)?w/l:1; asp=Math.max(0.12,Math.min(2,asp));
+    var maxW=180,maxH=110,bw,bh;
+    if(asp>=maxW/maxH){bw=maxW;bh=maxW/asp;}else{bh=maxH;bw=maxH*asp;}
+    var x0=30+(180-bw)/2, y0=34+(110-bh)/2;
+    return '<svg class="sk" viewBox="0 0 300 190" role="img" aria-label="'+M.skAria+'">'+
+      '<rect x="'+x0.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="4"/>'+
+      '<text x="'+(x0+bw/2).toFixed(1)+'" y="'+(y0-10).toFixed(1)+'" text-anchor="middle">'+top+'</text>'+
+      '<text x="'+(x0+bw+10).toFixed(1)+'" y="'+(y0+bh/2-2).toFixed(1)+'">'+r1+'</text>'+
+      '<text class="m" x="'+(x0+bw+10).toFixed(1)+'" y="'+(y0+bh/2+14).toFixed(1)+'">'+r2+'</text></svg>';
+  }
+  function sketchHat(bottom,r1,r2,crown){
+    return '<svg class="sk" viewBox="0 0 300 190" role="img" aria-label="'+M.skAria+'">'+
+      '<path d="M70 160 L70 80 Q70 28 120 28 Q170 28 170 80 L170 160 Z"/>'+
+      '<path class="dash" d="M70 78 L170 78"/>'+
+      '<text class="m" x="120" y="60" text-anchor="middle">'+crown+'</text>'+
+      '<text x="120" y="182" text-anchor="middle">'+bottom+'</text>'+
+      '<text x="182" y="100">'+r1+'</text><text class="m" x="182" y="116">'+r2+'</text></svg>';
+  }
+  function calcShape(){
+    var gp=gauge(); if(!(gp.st>0&&gp.rw>0)){RES.shapeInfo=null;$('shapeSketch').innerHTML='';return needGauge();}
+    var f=fK(), wash=Math.abs(shrinkPct())>0.01, u=unitName(), us=unitShort(), m={tiles:[],lines:[]};
+    var t=S.shape, info=null, sk='';
+    if(t==='hat'||t==='mit'){
+      var P=S[t], circ=pn(P.circ), ease=pn(P.ease), H=pn(t==='hat'?P.height:P.length), C=pn(t==='hat'?P.crown:P.top);
+      var wedges=t==='hat'?Math.max(2,Math.round(pn(P.wedges))):4;
+      if(!(circ>0&&H>0&&C>0)){RES.shapeInfo=null;$('shapeSketch').innerHTML='';return {tiles:[],lines:[line(M.shFill,'warn')]};}
+      if(C>=H){RES.shapeInfo=null;$('shapeSketch').innerHTML='';return {tiles:[],lines:[line(M.shCrownBig,'warn')]};}
+      var fin=circ*(1+ease/100), N0=fin*f*gp.st, N=Math.max(wedges,Math.round(N0/wedges)*wedges);
+      var Rb=Math.max(0,Math.round((H-C)*f*gp.rw)), Rc=Math.max(1,Math.round(C*f*gp.rw));
+      var E=t==='hat'?wedges:(N>=16?8:4), nDec=Math.max(0,Math.round((N-E)/wedges));
+      m.tiles.push(tile(N,M.shTileSt(N)));
+      m.tiles.push(tile(Rb+Rc,M.shTileRows));
+      m.lines.push(line(M.shCast(t,N,wedges,N/gp.st,wash?N/gp.st/f:null,u)));
+      m.lines.push(line(M.shBody(t,Rb,H-C,u)));
+      m.lines.push(line(M.shCrown(t,Rc,C,wedges,N,E,u)));
+      if(nDec>Rc) m.lines.push(line(M.shWarn(t,nDec,Rc),'warn'));
+      else if(nDec>0) m.lines.push(line(M.shEvery(t,Rc/nDec),'alt'));
+      if(t==='mit') m.lines.push(line(M.mitThumb,'alt'));
+      info={dec:{a:N,b:E,rows:Rc,per:wedges},yarn:{pw:fin,ph:H,pc:t==='mit'?2:1}};
+      sk=sketchHat(M.skSt(N,fmt(fin,1),us),M.skRw(Rb+Rc),fmt(H,1)+' '+us,M.skCrown(t,Rc));
+    }else{
+      var Q=S[t], w=pn(Q.w), l=pn(Q.l);
+      if(!(w>0&&l>0)){RES.shapeInfo=null;$('shapeSketch').innerHTML='';return {tiles:[],lines:[line(M.rcNeed,'warn')]};}
+      var mult=Math.max(1,Math.round(pn(S.r.mult))), edge=Math.max(0,Math.round(pn(S.r.edge)));
+      var rowMult=Math.max(1,Math.round(pn(S.r.rowMult))), extra=Math.max(0,Math.round(pn(S.r.extra)));
+      var N2=castCount(w*f*gp.st,mult,edge), R2=Math.max(1,Math.round(l*f*gp.rw/rowMult))*rowMult;
+      m.tiles.push(tile(N2,M.castTileSt(N2)));
+      m.tiles.push(tile(R2,M.castTileRow(R2)));
+      m.lines.push(line(M.rcLine(t,N2/gp.st/f,R2/gp.rw/f,u,wash)));
+      if(extra>0) m.lines.push(line(M.rcChain(N2+extra)));
+      if(mult>1||edge>0) m.lines.push(line(M.rcMult(mult,edge),'alt'));
+      info={yarn:{pw:N2/gp.st/f,ph:R2/gp.rw/f,pc:1}};
+      sk=sketchRect(w,l,M.skSt(N2,fmt(w,1),us),M.skRw(R2),fmt(l,1)+' '+us);
+    }
+    RES.shapeInfo=info; $('shapeSketch').innerHTML=sk;
+    return m;
+  }
+
+  function calcYarn(){
+    var Y=S.y, sw=pn(Y.sw), sh=pn(Y.sh), sg=pn(Y.sg);
+    if(!(sw>0&&sh>0&&sg>0)) return {tiles:[],lines:[line(M.yNeedSample,'warn')]};
+    var pw=pn(Y.pw), ph=pn(Y.ph), pc=Math.max(1,Math.round(pn(Y.pc))||1), mg=Math.max(0,pn(Y.margin));
+    if(!(pw>0&&ph>0)) return {tiles:[],lines:[line(M.yNeedPiece,'warn')]};
+    var f=fK(), wash=Math.abs(shrinkPct())>0.01, dens=sg/(sw*sh);
+    var base=dens*pw*ph*pc*f*f, total=base*(1+mg/100);
+    var skW=pn(Y.skW), skL=pn(Y.skL), m={tiles:[],lines:[]};
+    m.tiles.push(tile(fmt(total,0),M.yTileG(total)));
+    if(skW>0){
+      var nsk=Math.ceil(total/skW);
+      m.tiles.push(tile(nsk,M.yTileSk(nsk,skW)));
+      m.lines.push(line(M.ySkeins(total/skW)));
+    }
+    if(skW>0&&skL>0) m.lines.push(line(M.yMeters(total/skW*skL)));
+    m.lines.push(line(M.yDens(dens,pw*ph*pc,base,mg,total,M.sq[S.units]),'alt'));
+    if(wash) m.lines.push(line(M.yShrink(shrinkPct()),'alt'));
+    m.lines.push(line(M.yNote,'alt'));
+    return m;
+  }
+
+  /* ---------- Output ---------- */
+  function renderRes(prefix,m){
+    $(prefix+'Tiles').innerHTML=m.tiles.map(function(t){return '<div class="tile"><b>'+esc(t[0])+'</b><span>'+esc(t[1])+'</span></div>'}).join('');
+    $(prefix+'Lines').innerHTML=m.lines.map(function(l){return '<p'+(l[1]?' class="'+l[1]+'"':'')+'>'+l[0]+'</p>'}).join('')+(m.extra||'');
+  }
+  function toText(title,m){
+    var out=[title];
+    m.tiles.forEach(function(t){out.push(t[0]+' '+t[1])});
+    m.lines.forEach(function(l){out.push(strip(l[0]))});
+    if(m.copyExtra) out=out.concat(m.copyExtra);
+    return out.join('\n');
+  }
+  function renderDerived(){
+    var base=perUnit(S.g.st,S.g.stW), baseR=perUnit(S.g.rw,S.g.rwH), h='';
+    h+=(base>0&&baseR>0)?'<div>'+M.derivedMain(base,baseR,S.units)+'</div>':'<div>'+M.derivedNeed+'</div>';
+    if(S.use!=='main'){var q=savedById(S.use), gp=gauge(); if(q&&gp.st>0) h+='<div class="sub">'+M.derivedUsing(esc(q.name),gp.st,gp.rw,S.units)+'</div>';}
+    $('derived').innerHTML=h;
+  }
+  function calc(){
+    renderDerived();
+    RES.cast=calcCast(); renderRes('cast',RES.cast);
+    RES.size=calcSize(); renderRes('size',RES.size);
+    RES.conv=calcConv(); renderRes('conv',RES.conv);
+    RES.dec=calcDec(); renderRes('dec',RES.dec);
+    RES.shape=calcShape(); renderRes('shape',RES.shape);
+    RES.yarn=calcYarn(); renderRes('yarn',RES.yarn);
+    var info=RES.shapeInfo;
+    $('shapeDec').hidden=!(info&&info.dec);
+    $('shapeYarn').hidden=!info;
+    $('decCounter').disabled=!RES.decSched;
+  }
+
+  /* ---------- Interface ---------- */
+  function renderUnits(){
+    $('uCm').setAttribute('aria-pressed',S.units==='cm'); $('uIn').setAttribute('aria-pressed',S.units==='in');
+    var els=document.querySelectorAll('.un'); for(var i=0;i<els.length;i++) els[i].textContent=unitName();
+  }
+  function buildTabs(){
+    var box=$('modes'); box.innerHTML='';
+    MODES.forEach(function(k){
+      var b=document.createElement('button'); b.type='button'; b.className='tab'; b.setAttribute('role','tab');
+      b.setAttribute('data-mode',k); b.textContent=M.modes[k];
+      b.addEventListener('click',function(){S.mode=k;save();renderMode();});
+      box.appendChild(b);
+    });
+    var sb=$('shapeSeg'); sb.innerHTML='';
+    SHAPES.forEach(function(k){
+      var b=document.createElement('button'); b.type='button'; b.setAttribute('data-shape',k); b.textContent=M.shapes[k];
+      b.addEventListener('click',function(){S.shape=k;save();renderMode();calc();});
+      sb.appendChild(b);
+    });
+  }
+  function renderMode(){
+    var tabs=$('modes').children;
+    for(var i=0;i<tabs.length;i++) tabs[i].setAttribute('aria-selected',tabs[i].getAttribute('data-mode')===S.mode);
+    MODES.forEach(function(k){$('v_'+k).hidden=S.mode!==k});
+    var sb=$('shapeSeg').children;
+    for(var j=0;j<sb.length;j++) sb[j].setAttribute('aria-pressed',sb[j].getAttribute('data-shape')===S.shape);
+    SHAPES.forEach(function(k){$('f_'+k).hidden=S.shape!==k});
+    renderDecMode();
+  }
+  function renderDecMode(){
+    var row=S.d.mode==='row';
+    $('dmRows').setAttribute('aria-pressed',!row); $('dmRow').setAttribute('aria-pressed',row);
+    $('wrapRows').hidden=row; $('wrapPer').hidden=row;
+    $('decFootRows').hidden=row; $('decFootRow').hidden=!row;
+    $('decFootCounter').hidden=row; $('decCounter').hidden=row;
+    $('dALabel').textContent=row?M.dALabelRow:M.dALabel;
+  }
+  function renderSaved(){
+    var sel=$('savedSel'), keep=sel.value, use=$('useSel');
+    if(!S.saved.length) sel.innerHTML='<option value="">'+esc(M.noSaved)+'</option>';
+    else{
+      sel.innerHTML=S.saved.map(function(q){
+        return '<option value="'+esc(q.id)+'">'+esc(q.name)+' ('+esc(M.savedDesc(q))+')</option>';
+      }).join('');
+      if(keep&&savedById(keep)) sel.value=keep;
+    }
+    use.innerHTML='<option value="main">'+esc(M.mainGauge)+'</option>'+S.saved.map(function(q){return '<option value="'+esc(q.id)+'">'+esc(q.name)+'</option>'}).join('');
+    use.value=S.use;
+    $('applyBtn').disabled=!S.saved.length; $('delBtn').disabled=!S.saved.length;
+    $('delBtn').textContent=delConfirm?M.delSure:M.delBtn;
+    $('delBtn').style.background=delConfirm?'var(--accent)':''; $('delBtn').style.color=delConfirm?'var(--on-accent)':'';
+  }
+
+  function convertSample(v,toIn){
+    var n=pn(v); if(!(n>0)) return v;
+    if(toIn){ if(Math.abs(n-10)<1e-9) return '4'; return String(Math.round(n/2.54*10)/10); }
+    if(Math.abs(n-4)<1e-9) return '10'; return String(Math.round(n*2.54*10)/10);
+  }
+  function convLen(v,toIn){
+    var n=pn(v); if(!(n>0)) return v;
+    return String(Math.round((toIn?n/2.54:n*2.54)*10)/10);
+  }
+  var SAMPLE=[['g','stW'],['g','rwH'],['p','stW'],['p','rwH']];
+  var LENGTHS=[['t','w'],['t','h'],['hat','circ'],['hat','height'],['hat','crown'],['mit','circ'],['mit','length'],['mit','top'],['sc','w'],['sc','l'],['bl','w'],['bl','l'],['y','sw'],['y','sh'],['y','pw'],['y','ph']];
+  function setUnits(u){
+    if(u===S.units) return;
+    var toIn=u==='in';
+    SAMPLE.forEach(function(p){S[p[0]][p[1]]=convertSample(S[p[0]][p[1]],toIn)});
+    LENGTHS.forEach(function(p){S[p[0]][p[1]]=convLen(S[p[0]][p[1]],toIn)});
+    S.units=u; save(); fillInputs(); renderUnits(); calc();
+  }
+
+  function copyText(text){
+    var msg=$('copyMsg'), box=$('copyBox');
+    var fail=function(){box.hidden=false;box.value=text;box.focus();box.select();msg.textContent=M.copyFail};
+    var ok=function(){box.hidden=true;msg.textContent=M.copied};
+    try{navigator.clipboard.writeText(text).then(ok,fail)}catch(e){fail()}
+  }
+
+  FIELDS.forEach(function(f){
+    $(f[0]).addEventListener('input',function(e){setF(f,e.target.value.slice(0,10));save();calc();});
+  });
+  $('uCm').addEventListener('click',function(){setUnits('cm')});
+  $('uIn').addEventListener('click',function(){setUnits('in')});
+  $('useSel').addEventListener('change',function(e){S.use=e.target.value;save();calc();});
+
+  $('saveBtn').addEventListener('click',function(){
+    var name=$('saveName').value.trim(), msg=$('savedMsg');
+    if(!name){msg.textContent=M.nameNeed;$('saveName').focus();return;}
+    if(!(perUnit(S.g.st,S.g.stW)>0&&perUnit(S.g.rw,S.g.rwH)>0)){msg.textContent=M.gaugeFirst;return;}
+    if(S.saved.length>=100){msg.textContent=M.savedMax;return;}
+    var q={id:uid(),name:name.slice(0,40),units:S.units,st:S.g.st,stW:S.g.stW,rw:S.g.rw,rwH:S.g.rwH};
+    S.saved.push(q); S.use=q.id; save(); delConfirm=false; $('saveName').value=''; renderSaved(); calc();
+    $('savedSel').value=q.id; msg.textContent=M.savedOk(q.name);
+  });
+  $('applyBtn').addEventListener('click',function(){
+    var q=savedById($('savedSel').value), msg=$('savedMsg'); if(!q) return;
+    delConfirm=false;
+    if(q.units!==S.units) setUnits(q.units);
+    S.g={st:q.st,stW:q.stW,rw:q.rw,rwH:q.rwH}; S.use='main'; save(); fillInputs(); renderSaved(); calc();
+    msg.textContent=M.applied(q.name);
+  });
+  $('delBtn').addEventListener('click',function(){
+    var q=savedById($('savedSel').value); if(!q) return;
+    if(!delConfirm){delConfirm=true;renderSaved();return;}
+    S.saved=S.saved.filter(function(x){return x.id!==q.id}); if(S.use===q.id) S.use='main';
+    delConfirm=false; save(); renderSaved(); calc();
+    $('savedMsg').textContent=M.deleted;
+  });
+  $('savedSel').addEventListener('change',function(){delConfirm=false;renderSaved();});
+
+  document.addEventListener('click',function(e){
+    var c=e.target.closest&&e.target.closest('[data-copy]');
+    if(c){var k=c.getAttribute('data-copy'); if(RES[k]) copyText(toText(M.titles[k],RES[k])); return;}
+    var p=e.target.closest&&e.target.closest('[data-preset]');
+    if(p){
+      var a=p.getAttribute('data-preset').split(':'), g=a[0], toIn=S.units==='in';
+      S[g].w=toIn?convLen(a[1],true):a[1]; S[g].l=toIn?convLen(a[2],true):a[2];
+      save(); fillInputs(); calc();
+    }
+  });
+  $('dmRows').addEventListener('click',function(){S.d.mode='rows';save();renderDecMode();calc();});
+  $('dmRow').addEventListener('click',function(){S.d.mode='row';save();renderDecMode();calc();});
+  $('decCounter').addEventListener('click',function(){
+    var sc=RES.decSched; if(!sc) return;
+    copyText(rle(sc.perRow));
+  });
+  $('shapeDec').addEventListener('click',function(){
+    var info=RES.shapeInfo; if(!info||!info.dec) return;
+    S.d={mode:'rows',a:String(info.dec.a),b:String(info.dec.b),rows:String(info.dec.rows),per:String(info.dec.per)};
+    S.mode='dec'; save(); fillInputs(); renderMode(); calc(); window.scrollTo(0,0);
+  });
+  $('shapeYarn').addEventListener('click',function(){
+    var info=RES.shapeInfo; if(!info) return;
+    S.y.pw=String(Math.round(info.yarn.pw*10)/10); S.y.ph=String(Math.round(info.yarn.ph*10)/10); S.y.pc=String(info.yarn.pc);
+    S.mode='yarn'; save(); fillInputs(); renderMode(); calc(); window.scrollTo(0,0);
+  });
+
+  var impConfirm=false;
+  function xmsg(t){$('xmsg').textContent=t}
+  function resetImp(){impConfirm=false;$('imp').textContent=M.impBtn}
+  $('xfer').addEventListener('input',resetImp);
+  $('exp').addEventListener('click',function(){
+    var txt=JSON.stringify(S), ta=$('xfer'); ta.value=txt; resetImp();
+    var ok=function(){xmsg(M.expOk)};
+    var man=function(){ta.focus();ta.select();xmsg(M.expManual)};
+    try{navigator.clipboard.writeText(txt).then(ok,man)}catch(e){man()}
+  });
+  $('imp').addEventListener('click',function(){
+    var s=null;
+    try{s=JSON.parse($('xfer').value.trim())}catch(e){}
+    if(!s||typeof s!=='object'||!s.g){
+      resetImp(); xmsg(M.impBad); return;
+    }
+    if(!impConfirm){
+      impConfirm=true; $('imp').textContent=M.impAskBtn;
+      xmsg(M.impAsk); return;
+    }
+    S=clean(s); delConfirm=false; resetImp(); save(); fillInputs(); renderUnits(); renderMode(); renderSaved(); calc();
+    xmsg(M.impDone(S.saved.length));
+  });
+
+  buildTabs(); fillInputs(); renderUnits(); renderMode(); renderSaved(); calc();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .catch(error => {
+        console.error(
+          "Service worker registration failed:",
+          error
+        );
+      });
+  });
+}
+</script>
+</body></html>
